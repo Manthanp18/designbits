@@ -567,12 +567,84 @@ export async function seedTagsData(
 
 export async function seedMultiSelectOptions() {
   const { tagsData, industriesData } = await fetchDatabaseObject()
-
   await seedTagsData(tagsData).catch(console.log)
   await seedIndustriesData(industriesData).catch(console.log)
 }
 
+export async function seedRelatedPosts() {
+  try {
+    let processedData = await fetchPostsData()
+    const notionSourceIds = processedData.map(post => post.notionSourceId)
+
+    const foundPosts = await db.post.findMany({
+      where: {
+        notionSourceId: {
+          in: notionSourceIds,
+        },
+      },
+    })
+
+    const foundPostsByNotionPageId = foundPosts.reduce(
+      (previousValue, source) => {
+        if (source.notionSourceId) {
+          previousValue[source.notionSourceId] = source
+        }
+        return previousValue
+      },
+      {} as { [x: string]: Post },
+    )
+
+    const relatedPostsMaps = processedData.map(notionPageData => {
+      const relatedPostsNotionPageIds = notionPageData.relatedPost
+      const postId = foundPostsByNotionPageId[notionPageData.notionSourceId].id
+      const relatedPostIds = relatedPostsNotionPageIds?.map(
+        ({ id: notionPageId }) => {
+          return foundPostsByNotionPageId[notionPageId]?.id
+        },
+      )
+      return { postId, relatedPostIds }
+    })
+
+    const t = await pMap(
+      relatedPostsMaps,
+      async relatedPostsMap => {
+        const { postId, relatedPostIds = [] } = relatedPostsMap
+        return pMap(
+          relatedPostIds,
+          relatedPostId => {
+            if (relatedPostId) {
+              return db.relatedPosts.upsert({
+                create: {
+                  postId,
+                  relatedPostId,
+                },
+                update: {
+                  postId,
+                  relatedPostId,
+                },
+                where: {
+                  postId_relatedPostId: {
+                    postId,
+                    relatedPostId,
+                  },
+                },
+              })
+            }
+          },
+          { concurrency: 2 },
+        )
+      },
+      {
+        concurrency: 2,
+      },
+    )
+    console.log(t)
+  } catch (e) {
+    console.log(e)
+  }
+}
 // seedSourcesData()
-seedPostsData()
+seedRelatedPosts()
+// seedPostsData()
 // seedTagsData()
 // seedMultiSelectOptions()

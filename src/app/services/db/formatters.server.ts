@@ -44,21 +44,21 @@ type RawInteractionsPostData = AsyncReturnType<
   typeof findInteractionsForCategory
 >
 
-type RawTotalReactionsOnPost =
-  RawInteractionsPostData["totalReactionsOnPost"][0]
-type Copy<T> = { [K in keyof T]: T[K] }
+// type RawTotalReactionsOnPost =
+//   RawInteractionsPostData["totalReactionsOnPost"][0]
+// type Copy<T> = { [K in keyof T]: T[K] }
 
-function formatTotalReactionsData(
-  totalReactionsOnPost: RawTotalReactionsOnPost[],
-) {
-  const reactionsCountByPostId = processGroupedByResult<
-    Copy<RawTotalReactionsOnPost>
-  >(totalReactionsOnPost, "postId", property("_count.id")) as Record<
-    string | number,
-    number
-  >
-  return reactionsCountByPostId
-}
+// function formatTotalReactionsData(
+//   totalReactionsOnPost: RawTotalReactionsOnPost[],
+// ) {
+//   const reactionsCountByPostId = processGroupedByResult<
+//     Copy<RawTotalReactionsOnPost>
+//   >(totalReactionsOnPost, "postId", property("_count.id")) as Record<
+//     string | number,
+//     number
+//   >
+//   return reactionsCountByPostId
+// }
 
 export type FormattedInteractionsPostData = ReturnType<
   typeof formatInteractionPostsData
@@ -68,9 +68,8 @@ function formatInteractionPostsData(
   data: RawInteractionsPostData,
   orderBy: PostsOrderBy = "recently-added",
 ) {
-  const { postsWithCurrentUserReactionData, totalReactionsOnPost } = data
+  const postsWithCurrentUserReactionData = data
 
-  const reactionsCountByPostId = formatTotalReactionsData(totalReactionsOnPost)
   const postsData = postsWithCurrentUserReactionData.map(interactionPost => {
     const {
       PostReactions,
@@ -85,13 +84,11 @@ function formatInteractionPostsData(
       ...rest,
       VideoSources: VideoSources.sort(videoSourcesSorter),
       Source: formatSourceLogos(Source),
-      reactionsCount: reactionsCountByPostId?.[interactionPost.id],
+      reactionsCount: _count.PostReactions,
       reactedByLoggedInUser: PostReactions?.length ? true : false,
       commentedByLoggedInUser: PostComments?.length ? true : false,
       _count,
-      popularity:
-        (commentsCount || 0) * 2 +
-        (reactionsCountByPostId?.[interactionPost.id] || 0),
+      popularity: (commentsCount || 0) * 2 + (_count.PostReactions || 0),
     }
   })
   return orderBy === "recently-added"
@@ -213,6 +210,7 @@ function formatSingleInteractionPostData(
     Source,
     Tags,
     PostComments,
+    RelatedPosts,
     ...rest
   } = data
   return {
@@ -226,6 +224,10 @@ function formatSingleInteractionPostData(
     })),
     VideoSources: VideoSources.sort(videoSourcesSorter),
     reactedByLoggedInUser: PostReactions?.length ? true : false,
+    relatedPosts: formatInteractionPostsData(
+      RelatedPosts.map(({ Post }) => Post),
+      "popular",
+    ),
   }
 }
 

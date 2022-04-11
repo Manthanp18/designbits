@@ -43,6 +43,7 @@ import { Text } from "slate"
 import { CustomElement, CustomText } from "~/types/editor"
 import Platform from "~/components/Posts/Platform"
 import ReplyButton from "~/components/Comments/ReplyButton"
+import InteractionCard from "~/components/Posts/InteractionCard"
 
 export let loader: LoaderFunction = async ({ params, request }) => {
   const postSlug = params.id
@@ -71,7 +72,6 @@ export let loader: LoaderFunction = async ({ params, request }) => {
     return formatSingleInteractionPostData(data)
   }
 }
-
 export const action: ActionFunction = apiHandler({
   POST: {
     handler: handlePostRelatedActions,
@@ -192,6 +192,15 @@ const Interaction = () => {
                 ))}
               </video>
             </div>
+            <div className="text-2xl font-bold text-gray-800">
+              Similar Interaction
+            </div>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-10  md:grid-cols-2 lg:grid-cols-3">
+              {postData.relatedPosts.map((post, i) => (
+                <InteractionCard post={post} index={i} key={post.id} />
+              ))}
+            </div>
+            <div className="mt-10 text-xl font-semibold">More from</div>
           </div>
           <div className="col-span-3 xl:col-span-2">
             <div className="w-full space-y-7 px-4 md:px-8">

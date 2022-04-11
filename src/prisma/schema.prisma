@@ -93,6 +93,8 @@ model Post {
   PostComments   Comment[]
   VideoSources   VideoSource[]
   Watchlist      Watchlist[]
+  RelatedPosts   RelatedPosts[] @relation("RelatedPost")
+  PostsRelatedTo RelatedPosts[] @relation("PostsRelatedTo")
 }
 
 enum VideoSize {
@@ -165,6 +167,16 @@ model Industry {
   Posts       Post[]
   updatedAt   DateTime?  @default(now())
   notionTagId String?    @unique
+}
+
+model RelatedPosts {
+  id            Int    @id @default(autoincrement())
+  postId        String
+  Post          Post   @relation("PostsRelatedTo", fields: [postId], references: [id])
+  relatedPostId String
+  RelatedPost   Post   @relation("RelatedPost", fields: [relatedPostId], references: [id])
+
+  @@unique([postId, relatedPostId])
 }
 
 model PostView {

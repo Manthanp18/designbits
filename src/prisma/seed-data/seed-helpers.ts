@@ -174,7 +174,7 @@ export async function findSourcesToCreateAndUpdate(
     },
   })
 
-  const foundSourcesGroupedById = foundSources.reduce(
+  const foundSourcesGroupedByNotionId = foundSources.reduce(
     (previousValue, source) => {
       if (source.notionSourceId) {
         previousValue[source.notionSourceId] = source
@@ -188,7 +188,7 @@ export async function findSourcesToCreateAndUpdate(
   const sourcesToUpdate: (ParsedSourceItem & { id: Source["id"] })[] = []
 
   processedData.forEach(notionPageItem => {
-    const foundSource = foundSourcesGroupedById[
+    const foundSource = foundSourcesGroupedByNotionId[
       notionPageItem.notionSourceId
     ] as Source & {
       SourceLogos: {

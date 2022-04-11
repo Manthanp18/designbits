@@ -59,6 +59,7 @@ async function findPostsIncludingUserReaction({
       _count: {
         select: {
           PostComments: true,
+          PostReactions: true,
         },
       },
     },
@@ -86,18 +87,10 @@ type PostIncludingCurrentUserReactionData = AsyncReturnType<
 >
 
 async function findInteractionsForCategory({ userId, orderBy }: props) {
-  const { default: pProps } = await import("p-props")
-
-  return pProps({
-    postsWithCurrentUserReactionData: findPostsIncludingUserReaction({
-      userId,
-      orderBy,
-    }),
-    totalReactionsOnPost: findPostReactionsCount(),
-  }) as unknown as {
-    postsWithCurrentUserReactionData: PostIncludingCurrentUserReactionData
-    totalReactionsOnPost: TotalReactionsOnPost
-  }
+  return findPostsIncludingUserReaction({
+    userId,
+    orderBy,
+  })
 }
 
 type FindPostPageDataProps = {
@@ -180,6 +173,74 @@ async function findPostPageData({ postSlug, userId }: FindPostPageDataProps) {
             },
           }
         : false,
+      RelatedPosts: {
+        include: {
+          Post: {
+            select: {
+              id: true,
+              slug: true,
+              description: true,
+              title: true,
+              createdById: true,
+              createdAt: true,
+              CreatedBy: true,
+              modifiedAt: true,
+              updatedAt: true,
+              previewUrl: true,
+              notionSourceId: true,
+              sourceId: true,
+              platform: true,
+              device: true,
+              Source: {
+                select: {
+                  SourceLogos: true,
+                  name: true,
+                  url: true,
+                },
+              },
+              VideoSources: {
+                select: {
+                  url: true,
+                  id: true,
+                  size: true,
+                  type: true,
+                },
+                where: {
+                  size: {
+                    in: [VideoSize.MEDIUM_480P, VideoSize.ORIGINAL],
+                  },
+                },
+              },
+              PostReactions: userId
+                ? {
+                    select: {
+                      reaction: true,
+                    },
+                    where: {
+                      reactedBy: userId,
+                    },
+                  }
+                : false,
+              PostComments: userId
+                ? {
+                    select: {
+                      id: true,
+                    },
+                    where: {
+                      createdById: userId,
+                    },
+                  }
+                : false,
+              _count: {
+                select: {
+                  PostComments: true,
+                  PostReactions: true,
+                },
+              },
+            },
+          },
+        },
+      },
       _count: {
         select: {
           PostReactions: true,

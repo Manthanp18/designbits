@@ -134,6 +134,10 @@ export async function fetchPostsData() {
           page.properties?.Industries?.type === "multi_select"
             ? page.properties?.Industries?.multi_select
             : null,
+        relatedPost:
+          page.properties.RelatedTo?.type === "relation"
+            ? page.properties.RelatedTo?.relation
+            : null,
         device:
           page.properties?.Device?.type === "select"
             ? page.properties?.Device?.select?.name
@@ -162,6 +166,7 @@ export async function fetchPostsData() {
           tags: parsedData.tags,
           platform: platformName,
           industries: parsedData.industries,
+          relatedPost: parsedData.relatedPost,
           device: deviceName,
         }
       }
