@@ -15,7 +15,7 @@ import Spinner from "./components/Spinner"
 import { getLoggedInUser } from "./services/auth/session.server"
 import { OkResponse } from "./utils/response-helpers.server"
 import { User } from "@prisma/client"
-import { RootContextProvider } from "./context/root"
+import { RootContextProvider } from "./context-modules/RootContext"
 import CaughtError from "./components/common/CaughtError"
 
 const LOADER_WORDS = [
@@ -157,7 +157,7 @@ type LoaderData = SuccessResponse<User | null, null>
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
   const loaderData = useLoaderData<LoaderData>()
-  const rootContextData = { user: loaderData.data }
+  const rootContextData = { user: loaderData.data, isAuthModalOpen: false }
   return (
     <RootContextProvider initState={rootContextData}>
       <Document>
@@ -174,17 +174,15 @@ export function ErrorBoundary({ error }: { error: Error }) {
   console.error(error)
   return (
     <Document title="Error!">
-      <Layout>
-        <div>
-          <h1>There was an error</h1>
-          <p>{error.message}</p>
-          <hr />
-          <p>
-            Hey, developer, you should replace this with what you want your
-            users to see.
-          </p>
-        </div>
-      </Layout>
+      <div>
+        <h1>There was an error</h1>
+        <p>{error.message}</p>
+        <hr />
+        <p>
+          Hey, developer, you should replace this with what you want your users
+          to see.
+        </p>
+      </div>
     </Document>
   )
 }

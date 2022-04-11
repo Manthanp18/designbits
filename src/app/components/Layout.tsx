@@ -12,15 +12,18 @@ import SearchBox from "./SearchBox"
 import Button from "./Button"
 import UploadIcon from "./icons/Upload"
 import { NavLink } from "remix"
-import { useRootContext } from "~/context/root"
+import { useRootContext } from "~/context-modules/RootContext"
 import ProfileDropdown from "./NavBar/ProfileDropdown"
 import { RemixLinkProps } from "@remix-run/react/components"
+import { Modal } from "./common/Modal"
 
 const userNavigation: {
   name: string
   href: string
   prefetch?: RemixLinkProps["prefetch"]
-}[] = [{ name: "Sign out", href: "/auth/logout", prefetch: "none" }]
+}[] = [
+  // { name: "Sign out", href: "/auth/logout", prefetch: "none" },
+]
 
 const iconProps = {
   height: "24",
@@ -44,7 +47,8 @@ const navigation = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const {
-    rootState: { user },
+    rootState: { user, isAuthModalOpen, postSlug },
+    openAuthModal,
   } = useRootContext()
   return (
     <>
@@ -186,7 +190,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </>
           )}
         </Disclosure>
-
+        <Modal
+          isOpen={isAuthModalOpen}
+          setIsOpen={() => openAuthModal(postSlug ?? "")}
+        />
         <div className="flex py-10">{children}</div>
       </div>
     </>

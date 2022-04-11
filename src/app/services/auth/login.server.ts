@@ -2,6 +2,7 @@ import { createCookieSessionStorage } from "remix"
 import { decrypt, encrypt } from "~/services/utils/encryption.server"
 import { getRequiredServerEnvVar } from "~/utils/secrets-helper"
 import { linkExpirationTime } from "../db/magic-link.server"
+import { PostsOrderBy } from "../db/queries/post.server"
 
 const loginInfoStorage = createCookieSessionStorage({
   cookie: {
@@ -28,8 +29,8 @@ async function getLoginInfoSession(request: Request) {
   return {
     getEmail: () => session.get("email") as string | undefined,
     setEmail: (email: string) => session.set("email", email),
-    setRedirectTo: () => session.get("redirectTo") as string | undefined,
-    getRedirectTo: (redirectTo: string) =>
+    getRedirectTo: () => session.get("redirectTo") as string | undefined,
+    setRedirectTo: (redirectTo: string) =>
       session.set("redirectTo", redirectTo),
 
     // NOTE: the magic link needs to be encrypted in the session because the
@@ -42,6 +43,9 @@ async function getLoginInfoSession(request: Request) {
     setMagicLink: (magicLink: string) =>
       session.set("magicLink", encrypt(magicLink)),
     unsetMagicLink: () => session.unset("magicLink"),
+    setSortPreference: (sortPreference: PostsOrderBy) =>
+      session.set("sortPreference", sortPreference),
+    getSortPreference: () => session.get("sortPreference") as PostsOrderBy,
     getMagicLinkVerified: () =>
       session.get("magicLinkVerified") as boolean | undefined,
     setMagicLinkVerified: (verified: boolean) =>
