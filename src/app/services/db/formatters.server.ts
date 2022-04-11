@@ -1,6 +1,5 @@
 import { TAG_COLORS, VideoSize, VideoSource } from "@prisma/client"
 import groupBy from "lodash.groupby"
-import property from "lodash.property"
 import { AsyncReturnType } from "type-fest"
 import {
   FormattedSourceElementProps,
@@ -23,20 +22,31 @@ const qualityPriority: VideoSize[] = [
   VideoSize.THUMBNAIL_240P,
 ]
 
-function processGroupedByResult<T extends Record<string | number, unknown>>(
-  xs: Array<T>,
-  key: string | number,
-  propertyAccessor: (x: T) => unknown,
-) {
-  return xs.reduce(function (rv, x) {
-    rv[x[key] as string | number] = propertyAccessor(x)
-    return rv
-  }, {} as Record<string | number, unknown>)
+function sortPosts<T extends any[]>(orderBy: PostsOrderBy, postsData: T): T {
+  return orderBy === "recently-added"
+    ? postsData
+    : postsData.sort((a, b) => {
+        if (a.popularity === b.popularity) {
+          return 0
+        }
+        return a.popularity < b.popularity ? 1 : -1
+      })
 }
 
-type RawInteractionsPostData = AsyncReturnType<
-  typeof findInteractionsForCategory
->
+// function processGroupedByResult<T extends Record<string | number, unknown>>(
+//   xs: Array<T>,
+//   key: string | number,
+//   propertyAccessor: (x: T) => unknown,
+// ) {
+//   return xs.reduce(function (rv, x) {
+//     rv[x[key] as string | number] = propertyAccessor(x)
+//     return rv
+//   }, {} as Record<string | number, unknown>)
+// }
+
+type CategoryPostsData = AsyncReturnType<typeof findInteractionsForCategory>
+type RelatedPostsData =
+  NonNullable<SingleInteractionPostData>["RelatedPosts"][0]["Post"][]
 
 // type RawTotalReactionsOnPost =
 //   RawInteractionsPostData["totalReactionsOnPost"][0]
@@ -59,11 +69,9 @@ export type FormattedInteractionsPostData = ReturnType<
 >[0]
 
 function formatInteractionPostsData(
-  data: RawInteractionsPostData,
+  postsWithCurrentUserReactionData: CategoryPostsData,
   orderBy: PostsOrderBy = "recently-added",
 ) {
-  const postsWithCurrentUserReactionData = data
-
   const postsData = postsWithCurrentUserReactionData.map(interactionPost => {
     const {
       PostReactions,
@@ -73,26 +81,38 @@ function formatInteractionPostsData(
       _count,
       ...rest
     } = interactionPost
-    const { PostComments: commentsCount } = _count
+    const commentsCount = interactionPost._count?.PostComments || 0
     return {
       ...rest,
-      VideoSources: VideoSources.sort(videoSourcesSorter),
+      VideoSources: VideoSources?.sort(videoSourcesSorter),
       Source: formatSourceLogos(Source),
-      reactionsCount: _count.PostReactions,
-      reactedByLoggedInUser: PostReactions?.length ? true : false,
+      reactionsCount: _count?.PostReactions,
+      reactedByLoggedInUser:
+        interactionPost.PostReactions && PostReactions?.length ? true : false,
       commentedByLoggedInUser: PostComments?.length ? true : false,
       _count,
-      popularity: (commentsCount || 0) * 2 + (_count.PostReactions || 0),
+      popularity: (commentsCount || 0) * 2 + (_count?.PostReactions || 0),
     }
   })
-  return orderBy === "recently-added"
-    ? postsData
-    : postsData.sort((a, b) => {
-        if (a.popularity === b.popularity) {
-          return 0
-        }
-        return a.popularity < b.popularity ? 1 : -1
-      })
+  return sortPosts(orderBy, postsData)
+}
+
+export type FormattedRelatedPostData = ReturnType<
+  typeof formatRelatedPostsData
+>[0]
+
+export function formatRelatedPostsData(relatedPostsData: RelatedPostsData) {
+  const postsData = relatedPostsData.map(interactionPost => {
+    const { Source, VideoSources, _count, ...rest } = interactionPost
+    const commentsCount = interactionPost._count?.PostComments || 0
+    return {
+      ...rest,
+      VideoSources: VideoSources?.sort(videoSourcesSorter),
+      Source: formatSourceLogos(Source),
+      popularity: (commentsCount || 0) * 2 + (_count?.PostReactions || 0),
+    }
+  })
+  return sortPosts("popular", postsData)
 }
 
 function videoSourcesSorter(
@@ -218,10 +238,7 @@ function formatSingleInteractionPostData(
     })),
     VideoSources: VideoSources.sort(videoSourcesSorter),
     reactedByLoggedInUser: PostReactions?.length ? true : false,
-    relatedPosts: formatInteractionPostsData(
-      RelatedPosts.map(({ Post }) => Post),
-      "popular",
-    ),
+    relatedPosts: formatRelatedPostsData(RelatedPosts.map(({ Post }) => Post)),
   }
 }
 

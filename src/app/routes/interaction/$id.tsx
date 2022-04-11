@@ -192,14 +192,23 @@ const Interaction = () => {
                 ))}
               </video>
             </div>
-            <div className="text-2xl font-bold text-gray-800">
-              Similar Interaction
-            </div>
-            <div className="grid grid-cols-1 gap-x-6 gap-y-10  md:grid-cols-2 lg:grid-cols-3">
-              {postData.relatedPosts.map((post, i) => (
-                <InteractionCard post={post} index={i} key={post.id} />
-              ))}
-            </div>
+            {postData.relatedPosts.length > 0 && (
+              <>
+                <div className="text-2xl font-bold text-gray-800">
+                  Similar Interactions
+                </div>
+                <div className="grid grid-cols-1 gap-x-6 gap-y-10  md:grid-cols-2 lg:grid-cols-3">
+                  {postData.relatedPosts.map((post, i) => (
+                    <InteractionCard
+                      post={post}
+                      index={i}
+                      key={post.id}
+                      showDetails={false}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
             <div className="mt-10 text-xl font-semibold">More from</div>
           </div>
           <div className="col-span-3 xl:col-span-2">

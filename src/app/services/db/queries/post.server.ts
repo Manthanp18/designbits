@@ -20,7 +20,11 @@ async function findPostsIncludingUserReaction({
   filters,
 }: props) {
   return db.post.findMany({
-    include: {
+    select: {
+      id: true,
+      slug: true,
+      createdAt: true,
+      title: true,
       Source: {
         select: {
           SourceLogos: true,
@@ -108,12 +112,6 @@ async function findPostReactionsCount() {
     },
   })
 }
-
-type TotalReactionsOnPost = AsyncReturnType<typeof findPostReactionsCount>
-
-type PostIncludingCurrentUserReactionData = AsyncReturnType<
-  typeof findPostsIncludingUserReaction
->
 
 async function findInteractionsForCategory({ userId, orderBy }: props) {
   return findPostsIncludingUserReaction({
@@ -208,18 +206,7 @@ async function findPostPageData({ postSlug, userId }: FindPostPageDataProps) {
             select: {
               id: true,
               slug: true,
-              description: true,
               title: true,
-              createdById: true,
-              createdAt: true,
-              CreatedBy: true,
-              modifiedAt: true,
-              updatedAt: true,
-              previewUrl: true,
-              notionSourceId: true,
-              sourceId: true,
-              platform: true,
-              device: true,
               Source: {
                 select: {
                   SourceLogos: true,
@@ -240,26 +227,6 @@ async function findPostPageData({ postSlug, userId }: FindPostPageDataProps) {
                   },
                 },
               },
-              PostReactions: userId
-                ? {
-                    select: {
-                      reaction: true,
-                    },
-                    where: {
-                      reactedBy: userId,
-                    },
-                  }
-                : false,
-              PostComments: userId
-                ? {
-                    select: {
-                      id: true,
-                    },
-                    where: {
-                      createdById: userId,
-                    },
-                  }
-                : false,
               _count: {
                 select: {
                   PostComments: true,
